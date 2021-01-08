@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
     def index 
         users = User.all 
-        render json: users
+        render json: { users }
     end
 
     def show 
@@ -13,27 +13,17 @@ class UsersController < ApplicationController
     end
 
     def create 
-        user = User.create!(user_params)
-
-        if user
-            session[:user_id] = user.id
-            render json: { user: UserSerializer.new(user), user: user }, status: :created
-        else
-            rnder json: { error: "Something wrong! user can't be created. Try again", status: 500}
+        @user = User.new(user_params)
+        
+        @current_shopping_cart.line_items.each do |item|
+            @user.line_items << item
+            item.shopping_cart_id = nil 
         end
+        @user.save
+        ShoppingCart.destroy(session[:shopping_cart_id])
+        session[:shopping_cart_id] = nil
+        render json: { products }
     end
-
-
-    # def login
-    #     user = User.find_by(email: params[:email])
-
-    #     if user && user.authenticate(params[:password])
-    #         magic = encode_token({user_id: user.id})
-    #         render json: {user: UserSerializer.new(user), token: magic }, status: :accepted
-    #     else
-    #         render json: {error: "Credentials you have provided does not match. Please enter it again or create an account."}, status: :unauthorized
-    #     end
-    # end
 
     private
     def user_params
